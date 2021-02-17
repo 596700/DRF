@@ -1,5 +1,5 @@
 # DRF
-Vulnerability Database by DRF
-Django              2.2.17
-djangorestframework 3.12.2
-django-environ      0.4.5
+Vulnerability Database by DRF<br>
+Django              2.2.17<br>
+djangorestframework 3.12.2<br>
+django-environ      0.4.5<br>
