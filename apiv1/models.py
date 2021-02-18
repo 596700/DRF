@@ -1,13 +1,14 @@
 from django.db import models
 from django.conf import settings
-from django.contrib.auth import get_user_model
 from django.core.validators import MaxValueValidator, MinValueValidator
 
 import uuid
-
-
-
 # Create your models here.
+
+"""
+カスタムUserのwacthlistフィールドの設定上、現在のユーザーモデルを取得する際にget_user_model()は使えなくなった
+おそらくカスタムユーザーを作成する前にapiv1.modelsを参照する必要があるためだと思われる
+"""
 
 """
 CPE(https://nvd.nist.gov/products/cpe/search)を参考にしてアプリ名、種別、ベンダ名を入れる
@@ -27,7 +28,7 @@ class Product(models.Model):
     part = models.CharField("種別", max_length=1, choices=P)
     vendor = models.CharField("ベンダ名", max_length=150)
     url = models.URLField("ベンダURL")
-    creator = models.ForeignKey(get_user_model(), on_delete=models.PROTECT,
+    creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
                                 verbose_name="作成者", related_name="product_created_by")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="作成日時")
 
@@ -45,7 +46,7 @@ class Version(models.Model):
     name = models.ManyToManyField(
         Product,
         through="ProductVersion",)
-    creator = models.ForeignKey(get_user_model(), on_delete=models.PROTECT,
+    creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
                                 verbose_name="作成者", related_name="version_created_by")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="作成日時")
 
@@ -60,7 +61,7 @@ class ProductVersion(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.ForeignKey(Product, on_delete=models.PROTECT, verbose_name="製品名")
     version = models.ForeignKey(Version, on_delete=models.PROTECT, verbose_name="バージョン")
-    creator = models.ForeignKey(get_user_model(), on_delete=models.PROTECT,
+    creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
                                 verbose_name="作成者", related_name="product_version_created_by")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="作成日時")
 
@@ -220,9 +221,9 @@ class Vulnerability(models.Model):
     overview = models.TextField("概要")
     solution = models.TextField("対策方法")
     vendor_information = models.TextField("ベンダ情報")
-    creator = models.ForeignKey(get_user_model(), on_delete=models.PROTECT,
+    creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
                                 verbose_name="作成者", related_name="vulnerability_created_by")
-    updater = models.ForeignKey(get_user_model(), on_delete=models.PROTECT,
+    updater = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
                                 verbose_name="更新者", related_name="vulnerability_updated_by")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="作成日時")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="更新日時")
@@ -235,7 +236,7 @@ class Comment(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     vulnerability = models.ForeignKey(Vulnerability, related_name='comment', on_delete=models.CASCADE, verbose_name="脆弱性")
     comment = models.TextField("コメント")
-    creator = models.ForeignKey(get_user_model(), on_delete=models.PROTECT,
+    creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
                                 verbose_name="作成者", related_name="comment_created_by")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="作成日時")
 

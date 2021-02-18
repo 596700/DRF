@@ -1,1 +1,4 @@
 *.env
+db.sqlite3
+/apiv1/migrations/*
+/users/migrations/*

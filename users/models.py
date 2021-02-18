@@ -9,6 +9,9 @@ from django.contrib.auth.hashers import make_password
 from django.core.mail import send_mail
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from django.contrib.auth import get_user_model
+
+from apiv1.models import ProductVersion
 # Create your models here.
 
 class UserManager(BaseUserManager):
@@ -89,6 +92,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     )
     date_joined = models.DateTimeField(_('date joined'), default=timezone.now)
 
+    # watchlist
+    watch_list = models.ManyToManyField(ProductVersion, verbose_name="ウォッチリスト", related_name="watcher")
+
     objects = UserManager()
 
     EMAIL_FIELD = 'email'
@@ -113,5 +119,3 @@ class User(AbstractBaseUser, PermissionsMixin):
     def email_user(self, subject, message, from_email=None, **kwargs):
         """Send an email to this user."""
         send_mail(subject, message, from_email, [self.email], **kwargs)
-
-    

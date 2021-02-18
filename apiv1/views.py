@@ -47,7 +47,7 @@ class VulnerabilityViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly&IsCreatorOrReadOnly]
 
     def perform_create(self, serializer):
-        serializer.save(creator=self.request.user)
+        serializer.save(creator=self.request.user, updater=self.request.user)
 
     def perform_update(self, serializer):
         serializer.save(updater=self.request.user)

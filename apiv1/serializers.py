@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from rest_framework.fields import CurrentUserDefault, CreateOnlyDefault
 from django.contrib.auth import get_user_model
+from django.conf import settings
 from django.contrib.auth.hashers import make_password
 from django.utils import timezone
 
@@ -12,11 +13,12 @@ from .models import (
 
 User = get_user_model()
 
+
 class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'password']
+        fields = ['id', 'username', 'email', 'password', 'watch_list']
         extra_kwargs = {'password': {'write_only': True, 'required': True}}
         
 
@@ -64,11 +66,9 @@ class VulnerabilitySerializer(serializers.ModelSerializer):
         fields = '__all__'
         depth = 1
     
-    creator = serializers.PrimaryKeyRelatedField(default=serializers.CreateOnlyDefault(CurrentUserDefault()), read_only=True)
-    updater = serializers.PrimaryKeyRelatedField(default=CurrentUserDefault(), read_only=True)
-    # modelsの方でauto_now_add=Trueにしているため不要？
-    # created_at = serializers.DateTimeField(default=serializers.CreateOnlyDefault(timezone.now))
-    # updated_at = serializers.HiddenField(default=timezone.now)
+    # creator, updaterはviewsでperform_method(create, update)処理している
+    creator = serializers.PrimaryKeyRelatedField(read_only=True)
+    updater = serializers.PrimaryKeyRelatedField(read_only=True)
     affected_software = serializers.PrimaryKeyRelatedField(many=True, queryset=ProductVersion.objects.all())
 
 class CommentSerializer(serializers.ModelSerializer):
