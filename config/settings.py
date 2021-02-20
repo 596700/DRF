@@ -41,8 +41,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    # 4rd party apps
+    # 3rd party apps
     'rest_framework',
+    # 'django_filters'
+    # 'djoser',
     # My apps
     'users.apps.UsersConfig',
     'apiv1.apps.Apiv1Config',
@@ -140,3 +142,14 @@ AUTH_USER_MODEL = 'users.User'
 
 # Mail送信用(console->smtpに要変更)
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# SITE_NAME = "Vulnerability DataBase"
+
+# DJOSER = {
+#     "USER_ID_FIELD": "email",
+#     "LOGIN_FIELD": "email",
+#     "SEND_ACTIVATION_EMAIL": True,
+#     "ACTIVATION_URL": "activate/{uid}/{token}",
+#     "SERIALIZERS": {
+#         "token_create": "users.serializers.CustomTokenCreateSerializer"
+#     },
+# }

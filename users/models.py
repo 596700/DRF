@@ -92,8 +92,11 @@ class User(AbstractBaseUser, PermissionsMixin):
     )
     date_joined = models.DateTimeField(_('date joined'), default=timezone.now)
 
-    # watchlist
-    watch_list = models.ManyToManyField(ProductVersion, verbose_name="ウォッチリスト", related_name="watcher")
+    """
+    watchlist
+    null=Trueではだめで、blank=Trueにしないとwatch_listが空のときユーザー作成ができない
+    """
+    watch_list = models.ManyToManyField(ProductVersion, verbose_name="ウォッチリスト", related_name="watcher", blank=True)
 
     objects = UserManager()
 

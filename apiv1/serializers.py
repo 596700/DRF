@@ -5,7 +5,9 @@ from django.conf import settings
 from django.contrib.auth.hashers import make_password
 from django.utils import timezone
 
-# from drf_writable_nested import WritableNestedModelSerializer
+# User Activate
+from django.core.signing import BadSignature, SignatureExpired, loads, dumps
+from django.contrib.auth.tokens import default_token_generator
 
 from .models import ( 
     Product, Version, ProductVersion, Vulnerability, Comment
@@ -16,9 +18,12 @@ User = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
 
+    # 仮登録状態にするためにis_active=Falseにする
+    is_active = serializers.HiddenField(default=False)
+
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'password', 'watch_list']
+        fields = ['id', 'username', 'email', 'password', 'watch_list', 'is_active']
         extra_kwargs = {'password': {'write_only': True, 'required': True}}
         
 
@@ -26,7 +31,8 @@ class UserSerializer(serializers.ModelSerializer):
         username = validated_data['username']
         email = validated_data['email']
         password = validated_data['password']
-        user = User(username=username, email=email, password=make_password(password))
+        is_active = validated_data['is_active']
+        user = User(username=username, email=email, password=make_password(password), is_active=is_active)
         user.save()
         return user
 
