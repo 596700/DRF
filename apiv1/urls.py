@@ -4,7 +4,8 @@ from rest_framework import routers
 from apiv1.views import ( 
     UserViewSet, ProductViewSet, VersionViewSet,
     ProductVersionViewSet, VulnerabilityViewSet,
-    CommentViewSet, UserAPIView, UserActivationViewSet
+    CommentViewSet, UserAPIView, UserActivationAPIView,
+    UserAPIView, UserRetrieveView
 )
 
 router = routers.DefaultRouter()
@@ -19,5 +20,7 @@ app_name = 'apiv1'
 urlpatterns = [
     path('', include(router.urls)),
     path('api-auth/', include('rest_framework.urls')),
-    path('user/create/complete/<token>/', UserActivationViewSet.as_view(), name='user_create_complete'),
+    path('user/', UserAPIView.as_view()),
+    path('user/create/complete/<token>/', UserActivationAPIView.as_view(), name='user_create_complete'),
+    path('user/<pk>/', UserRetrieveView.as_view()),
 ]

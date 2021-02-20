@@ -1,15 +1,15 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from rest_framework import viewsets, status, views
 from django.contrib.auth import get_user_model
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.pagination import PageNumberPagination
 
 # Userアクティベーション用
 from rest_framework.response import Response
 from django.conf import settings
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.signing import BadSignature, SignatureExpired, loads, dumps
-from django.http import Http404, HttpResponseBadRequest
 from django.template.loader import render_to_string
 from django.core.mail import send_mail
 
@@ -30,8 +30,14 @@ from users.permissions import IsOwnerOrReadOnly, IsCreatorOrReadOnly
 
 User = get_user_model()
 
+# Pagenation
+class BasicPagination(PageNumberPagination):
+    page_size_query_param = 'limits'
+
 # APIView
 class UserAPIView(views.APIView):
+    # Pagenation
+    pagination_class = BasicPagination
 
     def post(self, request, *args, **kwargs):
         serializer = UserSerializer(data=request.data)
@@ -55,32 +61,77 @@ class UserAPIView(views.APIView):
 
         return Response(serializer.data, status.HTTP_201_CREATED)
 
-    def get(self, request, format=None):
-        usernames = [user.username for user in User.objects.all()]
-        return Response(usernames)
+    def get(self, request):
+        # 本登録済みのユーザーのみを表示
+        queryset = User.objects.filter(is_active=True)
+        paginator = BasicPagination()
+        result = paginator.paginate_queryset(queryset, request)
+        serializer = UserSerializer(instance=result, many=True)
+        return Response(serializer.data, status.HTTP_200_OK)
 
-class UserActivationViewSet(views.APIView):
+
+class UserRetrieveView(views.APIView):
+    
+    def get(self, request, pk, *args, **kwargs):
+        # モデルを取得
+        user = get_object_or_404(User, pk=pk)
+        # シリアライザを作成
+        serializer = UserSerializer(instance=user)
+        return Response(serializer.data, status.HTTP_200_OK)
+
+    def delete(self, request, pk, *args, **kwargs):
+        # モデルを取得
+        user = get_object_or_404(User, pk=pk)
+        # モデルを削除
+        user.delete()
+        return Response(status.HTTP_204_NO_CONTENT)
+
+    # 更新・一部更新
+    def put(self, request, pk, *args, **kwargs):
+        # モデルを取得
+        user = get_object_or_404(User, pk=pk)
+        # シリアライザを作成
+        serializer = UserSerializer(instance=user, data=request.data)
+        # バリデーションを実行
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status.HTTP_200_OK)
+
+    # 一部更新
+    def patch(self, request, pk, *args, **kwargs):
+        # モデルを取得
+        user = get_object_or_404(User, pk=pk)
+        # シリアライザを作成
+        serializer = UserSerializer(instance=user, data=request.data, partical=True)
+        # バリデーションを実行
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status.HTTP_200_OK)
+
+class UserActivationAPIView(views.APIView):
 
     timeout_seconds = getattr(settings, 'ACTIVATION_TIMEOUT_SECONDS', 60*60*24)
     
     def get(self, request, *args, **kwargs):
 
         token = kwargs.get('token')
+        # Token decode
         try:
             user_id = loads(token, max_age=self.timeout_seconds)
-        # If token has Expired
+        # Token has Expired
         except SignatureExpired:
             return Response(status.HTTP_400_BAD_REQUEST)
         # Bad token
         except BadSignature:
             return Response(status.HTTP_400_BAD_REQUEST)
-        # Success
+        # Token decode後の処理
         else:
             try:
                 user = User.objects.get(id=user_id)
             except User.DoesNotExist:
                 return Response(status.HTTP_404_NOT_FOUND)
             else:
+                # user.is_active=Trueにして正常終了
                 if not user.is_active:
                     user.is_active = True
                     user.save()
@@ -88,7 +139,7 @@ class UserActivationViewSet(views.APIView):
         return Response(status.HTTP_400_BAD_REQUEST)
 
 
-
+# 開発終了後削除し、APIViewに移行する
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
