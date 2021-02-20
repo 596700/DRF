@@ -9,7 +9,9 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from django.conf import settings
 from django.contrib.sites.shortcuts import get_current_site
-from django.core.signing import BadSignature, SignatureExpired, loads, dumps
+from django.core.signing import (
+    BadSignature, SignatureExpired, loads, dumps
+)
 from django.template.loader import render_to_string
 from django.core.mail import send_mail
 
@@ -36,6 +38,9 @@ class BasicPagination(PageNumberPagination):
 
 # APIView
 class UserAPIView(views.APIView):
+
+    permission_classes = [IsOwnerOrReadOnly]
+    
     # Pagenation
     pagination_class = BasicPagination
 
@@ -63,7 +68,7 @@ class UserAPIView(views.APIView):
 
     def get(self, request):
         # 本登録済みのユーザーのみを表示
-        queryset = User.objects.filter(is_active=True)
+        queryset = User.objects.filter(is_active=True).order_by('-id')
         paginator = BasicPagination()
         result = paginator.paginate_queryset(queryset, request)
         serializer = UserSerializer(instance=result, many=True)
@@ -71,6 +76,8 @@ class UserAPIView(views.APIView):
 
 
 class UserRetrieveView(views.APIView):
+
+    permission_classes = [IsOwnerOrReadOnly]
     
     def get(self, request, pk, *args, **kwargs):
         # モデルを取得
@@ -78,13 +85,6 @@ class UserRetrieveView(views.APIView):
         # シリアライザを作成
         serializer = UserSerializer(instance=user)
         return Response(serializer.data, status.HTTP_200_OK)
-
-    def delete(self, request, pk, *args, **kwargs):
-        # モデルを取得
-        user = get_object_or_404(User, pk=pk)
-        # モデルを削除
-        user.delete()
-        return Response(status.HTTP_204_NO_CONTENT)
 
     # 更新・一部更新
     def put(self, request, pk, *args, **kwargs):
@@ -107,6 +107,13 @@ class UserRetrieveView(views.APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status.HTTP_200_OK)
+
+    def delete(self, request, pk, *args, **kwargs):
+        # モデルを取得
+        user = get_object_or_404(User, pk=pk)
+        # モデルを削除
+        user.delete()
+        return Response(status.HTTP_204_NO_CONTENT)
 
 class UserActivationAPIView(views.APIView):
 

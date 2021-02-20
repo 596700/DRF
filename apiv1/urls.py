@@ -19,7 +19,6 @@ router.register('comments', CommentViewSet)
 app_name = 'apiv1'
 urlpatterns = [
     path('', include(router.urls)),
-    path('api-auth/', include('rest_framework.urls')),
     path('user/', UserAPIView.as_view()),
     path('user/create/complete/<token>/', UserActivationAPIView.as_view(), name='user_create_complete'),
     path('user/<pk>/', UserRetrieveView.as_view()),
