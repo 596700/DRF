@@ -1,5 +1,5 @@
 from django.shortcuts import render, get_object_or_404
-from rest_framework import viewsets, status, views
+from rest_framework import viewsets, status, views, generics
 from django.contrib.auth import get_user_model
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
@@ -14,6 +14,9 @@ from django.core.signing import (
 )
 from django.template.loader import render_to_string
 from django.core.mail import send_mail
+
+# トランザクション
+from django.db import transaction
 
 from .serializers import ( 
     UserSerializer, ProductSerializer, VersionSerializer,
@@ -40,7 +43,7 @@ class BasicPagination(PageNumberPagination):
 class UserAPIView(views.APIView):
 
     permission_classes = [IsOwnerOrReadOnly]
-    
+
     # Pagenation
     pagination_class = BasicPagination
 
@@ -157,6 +160,10 @@ class ProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSerializer
     permission_classes = [IsAuthenticatedOrReadOnly&IsCreatorOrReadOnly]
 
+    @transaction.atomic
+    def perform_create(self, serializer):
+        serializer.save()
+
 class VersionViewSet(viewsets.ModelViewSet):
     queryset = Version.objects.all()
     serializer_class = VersionSerializer
@@ -172,6 +179,7 @@ class VulnerabilityViewSet(viewsets.ModelViewSet):
     serializer_class = VulnerabilitySerializer
     permission_classes = [IsAuthenticatedOrReadOnly&IsCreatorOrReadOnly]
 
+    @transaction.atomic
     def perform_create(self, serializer):
         serializer.save(creator=self.request.user, updater=self.request.user)
 
