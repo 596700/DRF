@@ -2,6 +2,9 @@ from django.db import models
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 
+# 排他制御(楽観的ロック)
+from concurrency.fields import AutoIncVersionField
+
 import uuid
 # Create your models here.
 
@@ -31,6 +34,7 @@ class Product(models.Model):
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
                                 verbose_name="作成者", related_name="product_created_by")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="作成日時")
+    ver = AutoIncVersionField("バージョン")
 
 
     class Meta:
@@ -42,13 +46,14 @@ class Product(models.Model):
 
 class Version(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    version = models.CharField("バージョン", max_length=150, unique=True)
+    version = models.CharField("製品バージョン", max_length=150, unique=True)
     name = models.ManyToManyField(
         Product,
         through="ProductVersion",)
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
                                 verbose_name="作成者", related_name="version_created_by")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="作成日時")
+    ver = AutoIncVersionField("バージョン")
 
     class Meta:
         # versionフィールドの数字(小大)文字順に並び替え
@@ -60,10 +65,11 @@ class Version(models.Model):
 class ProductVersion(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.ForeignKey(Product, on_delete=models.PROTECT, verbose_name="製品名")
-    version = models.ForeignKey(Version, on_delete=models.PROTECT, verbose_name="バージョン")
+    version = models.ForeignKey(Version, on_delete=models.PROTECT, verbose_name="製品バージョン")
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
                                 verbose_name="作成者", related_name="product_version_created_by")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="作成日時")
+    ver = AutoIncVersionField("バージョン")
 
     class Meta:
         ordering = ("name", "version")
@@ -229,6 +235,7 @@ class Vulnerability(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="作成日時")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="更新日時")
     affected_software = models.ManyToManyField(ProductVersion, verbose_name="影響を受けるシステム", related_name="vulnerability")
+    ver = AutoIncVersionField("バージョン")
 
     def __str__(self):
         return self.cve_id

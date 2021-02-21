@@ -45,7 +45,7 @@ class ProductSerializer(serializers.ModelSerializer):
         # 対象のモデル
         model = Product
         # 利用するフィールド
-        fields = '__all__'
+        fields = ['id', 'name', 'part', 'vendor', 'url', 'creator']
 
 class VersionSerializer(serializers.ModelSerializer):
 
@@ -53,7 +53,7 @@ class VersionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Version
-        fields = '__all__'
+        fields = ['id', 'version', 'name', 'creator']
 
 class ProductVersionSerializer(serializers.ModelSerializer):
     
@@ -69,7 +69,7 @@ class VulnerabilitySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Vulnerability
-        fields = '__all__'
+        exclude = ['ver']
         depth = 1
     
     # creator, updaterはviewsでperform_method(create, update)処理している
@@ -81,7 +81,9 @@ class CommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Comment
-        fields = '__all__'
+        # fields = '__all__'
+        fields = ['id', 'vulnerability', 'comment', 'creator', 'created_at']
         depth = 1
     
+    vulnerability = serializers.PrimaryKeyRelatedField(queryset=Vulnerability.objects.all())
     creator = serializers.PrimaryKeyRelatedField(default=serializers.CreateOnlyDefault(CurrentUserDefault()), read_only=True)

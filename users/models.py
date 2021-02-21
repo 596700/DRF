@@ -95,6 +95,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     """
     watchlist
     null=Trueではだめで、blank=Trueにしないとwatch_listが空のときユーザー作成ができない
+    初回のマイグレーション時にはコメントアウトしないとエラーになるので注意
     """
     watch_list = models.ManyToManyField(ProductVersion, verbose_name="ウォッチリスト", related_name="watcher", blank=True)
 
