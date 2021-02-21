@@ -67,19 +67,20 @@ class ProductVersion(models.Model):
 
     class Meta:
         ordering = ("name", "version")
+        unique_together = [["name", "version"]]
         # ユニーク制約
-        constraints = [
-            models.UniqueConstraint(
-                fields=["name", "version"],
-                name="app_version_unique"
-            )
-        ]
-    @classmethod
-    def check_duplicate(cls, name: str, version: str):
-        """
-        登録済みはTrue, 登録なしはFalse
-        """
-        return cls.objects.filter(name=name, version=version).exists()
+    #     constraints = [
+    #         models.UniqueConstraint(
+    #             fields=["name", "version"],
+    #             name="app_version_unique"
+    #         )
+    #     ]
+    # @classmethod
+    # def check_duplicate(cls, name: str, version: str):
+    #     """
+    #     登録済みはTrue, 登録なしはFalse
+    #     """
+    #     return cls.objects.filter(name=name, version=version).exists()
 
     def __str__(self):
         return '%s/%s' % (self.name, self.version)
