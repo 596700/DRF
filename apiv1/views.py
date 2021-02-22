@@ -5,6 +5,10 @@ from rest_framework.authentication import SessionAuthentication
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.pagination import PageNumberPagination
 
+# Filtering
+from django_filters import rest_framework as filters
+from django.db.models import Q
+
 # Userアクティベーション用
 from rest_framework.response import Response
 from django.conf import settings
@@ -69,9 +73,13 @@ class UserAPIView(views.APIView):
 
         return Response(serializer.data, status.HTTP_201_CREATED)
 
-    def get(self, request):
+    def get(self, request, *args, **kwargs):
         # 本登録済みのユーザーのみを表示
-        queryset = User.objects.filter(is_active=True).order_by('-id')
+        if request.query_params:
+            username = request.query_params.get('username')
+            queryset = User.objects.filter(Q(username__icontains=username), is_active=True).order_by('-id')
+        else:
+            queryset = User.objects.filter(is_active=True).order_by('-id')    
         paginator = BasicPagination()
         result = paginator.paginate_queryset(queryset, request)
         serializer = UserSerializer(instance=result, many=True)
@@ -155,29 +163,66 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     permission_classes = [IsOwnerOrReadOnly]
 
+class ProductFilter(filters.FilterSet):
+    name = filters.CharFilter(lookup_expr='icontains')
+    vendor = filters.CharFilter(lookup_expr='icontains')
+    part = filters.CharFilter(lookup_expr='icontains')
+
+    class Meta:
+        model = Product
+        fields = ['name', 'vendor', 'part']
+
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     permission_classes = [IsAuthenticatedOrReadOnly&IsCreatorOrReadOnly]
+    filter_class = ProductFilter
 
     @transaction.atomic
     def perform_create(self, serializer):
         serializer.save()
 
+class VersionFilter(filters.FilterSet):
+    version = filters.CharFilter(lookup_expr='icontains')
+
+    class Meta:
+        model = Version
+        fields = ['version']
+
 class VersionViewSet(viewsets.ModelViewSet):
     queryset = Version.objects.all()
     serializer_class = VersionSerializer
     permission_classes = [IsAuthenticatedOrReadOnly&IsCreatorOrReadOnly]
+    filter_class = VersionFilter
+
+class ProductVersionFilter(filters.FilterSet):
+    name = filters.CharFilter(field_name='name__name', lookup_expr='icontains')
+    version = filters.CharFilter(field_name='version__version', lookup_expr='icontains')
 
 class ProductVersionViewSet(viewsets.ModelViewSet):
     queryset = ProductVersion.objects.all()
     serializer_class = ProductVersionSerializer
     permission_classes = [IsAuthenticatedOrReadOnly&IsCreatorOrReadOnly]
+    filter_class = ProductVersionFilter
+
+class VulnerabilityFilter(filters.FilterSet):
+    """
+    資産に結びついている脆弱性に対処することを主な利用と考えているため、
+    ひとまず検索についてはCVEと影響下の製品のみ対処する
+    """
+    cve_id = filters.CharFilter(lookup_expr='icontains')
+    # リレーション先が更に中間テーブルであるため、冗長なquerysetとなっている
+    affected_software = filters.CharFilter(field_name='affected_software__name__name', lookup_expr='icontains')
+    
+    class Meta:
+        model = Vulnerability
+        fields = ['cve_id', 'affected_software']
 
 class VulnerabilityViewSet(viewsets.ModelViewSet):
     queryset = Vulnerability.objects.all()
     serializer_class = VulnerabilitySerializer
     permission_classes = [IsAuthenticatedOrReadOnly&IsCreatorOrReadOnly]
+    filter_class = VulnerabilityFilter
 
     @transaction.atomic
     def perform_create(self, serializer):

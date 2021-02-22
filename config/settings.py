@@ -43,7 +43,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     # 3rd party apps
     'rest_framework',
-    # 'django_filters'
+    'django_filters',
+    # 'crispy_forms',
     # My apps
     'users.apps.UsersConfig',
     'apiv1.apps.Apiv1Config',
@@ -141,6 +142,8 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     # 1ページあたりのデータ
     'PAGE_SIZE': 10,
+    # フィルタリング
+    'DEFAULT_FILTER_BACKENDS': ('django_filters.rest_framework.DjangoFilterBackend',),
 }
 
 # Authentication
